@@ -81,20 +81,20 @@ export class EmailService {
       throw new Error('Mox 配置不存在或缺少 apiUrl');
     }
 
-    // 调用你自建 Mox 的 HTTP 接口
+    // 调用你自建 Mox 的 HTTP 接口 (参考 mox webapi 规范)
     const response = await fetch(config.apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // 如果你的 Mox 服务设置了鉴权 Token/密码，在这里带上
-        ...(config.apiToken ? { 'Authorization': `Bearer ${config.apiToken}` } : {})
+        // Mox webapi 使用 HTTP Basic Authentication。前端在 API Token 字段填入 "username:password"
+        ...(config.apiToken ? { 'Authorization': `Basic ${Buffer.from(config.apiToken).toString('base64')}` } : {})
       },
-      // 这里的 body 字段需要根据你 Mox 接口的实际参数要求来写
+      // 按照 Mox webapi SendRequest 结构组装
       body: JSON.stringify({
-        from: config.from,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
+        From: config.from ? [{ Address: config.from }] : undefined,
+        To: [{ Address: options.to }],
+        Subject: options.subject,
+        HTML: options.html,
       }),
     });
 

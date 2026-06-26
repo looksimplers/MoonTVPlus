@@ -13950,7 +13950,7 @@ const EmailConfigComponent = ({
   const { alertModal, showAlert, hideAlert } = useAlertModal();
   const { isLoading, withLoading } = useLoadingState();
   const [enabled, setEnabled] = useState(false);
-  const [provider, setProvider] = useState<'smtp' | 'resend'>('smtp');
+  const [provider, setProvider] = useState<'smtp' | 'resend' | 'mox'>('smtp');
 
   // SMTP配置
   const [smtpHost, setSmtpHost] = useState('');
@@ -13963,6 +13963,11 @@ const EmailConfigComponent = ({
   // Resend配置
   const [resendApiKey, setResendApiKey] = useState('');
   const [resendFrom, setResendFrom] = useState('');
+
+  // Mox配置
+  const [moxApiUrl, setMoxApiUrl] = useState('');
+  const [moxFrom, setMoxFrom] = useState('');
+  const [moxApiToken, setMoxApiToken] = useState('');
 
   // 测试邮件
   const [testEmail, setTestEmail] = useState('');
@@ -13984,6 +13989,12 @@ const EmailConfigComponent = ({
       if (config.EmailConfig.resend) {
         setResendApiKey(config.EmailConfig.resend.apiKey || '');
         setResendFrom(config.EmailConfig.resend.from || '');
+      }
+
+      if (config.EmailConfig.mox) {
+        setMoxApiUrl(config.EmailConfig.mox.apiUrl || '');
+        setMoxFrom(config.EmailConfig.mox.from || '');
+        setMoxApiToken(config.EmailConfig.mox.apiToken || '');
       }
     }
   }, [config]);
@@ -14010,6 +14021,14 @@ const EmailConfigComponent = ({
               ? {
                   apiKey: resendApiKey,
                   from: resendFrom,
+                }
+              : undefined,
+          mox:
+            provider === 'mox'
+              ? {
+                  apiUrl: moxApiUrl,
+                  from: moxFrom,
+                  apiToken: moxApiToken,
                 }
               : undefined,
         };
@@ -14069,6 +14088,14 @@ const EmailConfigComponent = ({
                   from: resendFrom,
                 }
               : undefined,
+          mox:
+            provider === 'mox'
+              ? {
+                  apiUrl: moxApiUrl,
+                  from: moxFrom,
+                  apiToken: moxApiToken,
+                }
+              : undefined,
         };
 
         const response = await fetch('/api/admin/email', {
@@ -14105,7 +14132,7 @@ const EmailConfigComponent = ({
         </h3>
         <div className='text-sm text-blue-800 dark:text-blue-200 space-y-1'>
           <p>• 当用户收藏的影片有更新时，自动发送邮件通知</p>
-          <p>• 支持 SMTP 和 Resend 两种发送方式</p>
+          <p>• 支持 SMTP、Resend 和 Mox 三种发送方式</p>
           <p>• 用户可在个人设置中配置邮箱和通知偏好</p>
         </div>
       </div>
@@ -14163,6 +14190,18 @@ const EmailConfigComponent = ({
               />
               <span className='text-sm text-gray-700 dark:text-gray-300'>
                 Resend
+              </span>
+            </label>
+            <label className='flex items-center'>
+              <input
+                type='radio'
+                value='mox'
+                checked={provider === 'mox'}
+                onChange={(e) => setProvider(e.target.value as 'mox')}
+                className='mr-2'
+              />
+              <span className='text-sm text-gray-700 dark:text-gray-300'>
+                Mox
               </span>
             </label>
           </div>
@@ -14302,6 +14341,54 @@ const EmailConfigComponent = ({
               <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
                 需要先在 Resend 中验证域名
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Mox配置 */}
+        {provider === 'mox' && (
+          <div className='space-y-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700'>
+            <h4 className='text-sm font-medium text-gray-900 dark:text-white'>
+              Mox 配置
+            </h4>
+
+            <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                API URL *
+              </label>
+              <input
+                type='text'
+                value={moxApiUrl}
+                onChange={(e) => setMoxApiUrl(e.target.value)}
+                placeholder='https://your-mox-domain.com/api/v1/send'
+                className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white'
+              />
+            </div>
+
+            <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                API Token
+              </label>
+              <input
+                type='password'
+                value={moxApiToken}
+                onChange={(e) => setMoxApiToken(e.target.value)}
+                placeholder='如果设置了鉴权则需要填写'
+                className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white'
+              />
+            </div>
+
+            <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                发件人邮箱 *
+              </label>
+              <input
+                type='email'
+                value={moxFrom}
+                onChange={(e) => setMoxFrom(e.target.value)}
+                placeholder='noreply@yourdomain.com'
+                className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white'
+              />
             </div>
           </div>
         )}

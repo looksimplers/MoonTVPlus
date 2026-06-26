@@ -326,7 +326,7 @@ export interface AdminConfig {
   };
   EmailConfig?: {
     enabled: boolean; // 是否启用邮件通知
-    provider: 'smtp' | 'resend'; // 邮件发送方式
+    provider: 'smtp' | 'resend' | 'mox'; // 邮件发送方式
     // SMTP配置
     smtp?: {
       host: string; // SMTP服务器地址
