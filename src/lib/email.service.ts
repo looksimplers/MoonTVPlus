@@ -68,7 +68,41 @@ export class EmailService {
       throw new Error(`Resend API错误: ${response.statusText} - ${errorText}`);
     }
   }
+/**
+   * 🌟 新增：通过自建 Mox 服务发送邮件
+   */
+  static async sendViaMox(
+    // 注意：这里可能需要你去 admin.types.ts 里给 EmailConfig 加一个 mox 的类型定义
+    // 如果还没加，可以先用 any 绕过类型检查
+    config: any, 
+    options: EmailOptions
+  ): Promise<void> {
+    if (!config || !config.apiUrl) {
+      throw new Error('Mox 配置不存在或缺少 apiUrl');
+    }
 
+    // 调用你自建 Mox 的 HTTP 接口
+    const response = await fetch(config.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // 如果你的 Mox 服务设置了鉴权 Token/密码，在这里带上
+        ...(config.apiToken ? { 'Authorization': `Bearer ${config.apiToken}` } : {})
+      },
+      // 这里的 body 字段需要根据你 Mox 接口的实际参数要求来写
+      body: JSON.stringify({
+        from: config.from,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Mox 发信失败: ${response.status} - ${errorText}`);
+    }
+  }
   /**
    * 统一发送接口
    */
@@ -88,6 +122,10 @@ export class EmailService {
       } else if (emailConfig.provider === 'resend' && emailConfig.resend) {
         await this.sendViaResend(emailConfig.resend, options);
         console.log(`邮件已通过Resend发送至: ${options.to}`);
+      } // 🌟 新增：配置分发，当后台配置 provider 为 'mox' 时，走 Mox 逻辑
+      else if (emailConfig.provider === 'mox' && emailConfig.mox) {
+        await this.sendViaMox(emailConfig.mox, options);
+        console.log(`邮件已通过自建 Mox 发送至: ${options.to}`);
       } else {
         throw new Error('邮件配置不完整');
       }
