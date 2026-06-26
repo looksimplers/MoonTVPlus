@@ -29,10 +29,10 @@ export async function GET(request: NextRequest) {
     const adminConfig = await getConfig();
     const emailConfig = adminConfig?.EmailConfig || {
       enabled: false,
-      provider: 'smtp' as const,
+      provider: 'smtp' as const, // 注意：如果前端默认改成了 mox，这里可以相应调整
     };
 
-    // 不返回敏感信息（密码、API Key）
+    // 不返回敏感信息（密码、API Key、Token）
     const safeConfig = {
       enabled: emailConfig.enabled,
       provider: emailConfig.provider,
@@ -50,6 +50,14 @@ export async function GET(request: NextRequest) {
         ? {
             from: emailConfig.resend.from,
             apiKey: emailConfig.resend.apiKey ? '******' : '',
+          }
+        : undefined,
+      // 🌟 新增：返回脱敏后的 mox 配置
+      mox: emailConfig.mox
+        ? {
+            apiUrl: emailConfig.mox.apiUrl,
+            from: emailConfig.mox.from,
+            apiToken: emailConfig.mox.apiToken ? '******' : '',
           }
         : undefined,
     };
@@ -142,6 +150,15 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
+        } 
+        // 🌟 新增：验证 mox 配置
+        else if (emailConfig.provider === 'mox') {
+          if (!emailConfig.mox?.apiUrl || !emailConfig.mox?.from) {
+            return NextResponse.json(
+              { error: 'Mox配置不完整，请至少提供 API URL 和发件人邮箱' },
+              { status: 400 }
+            );
+          }
         }
       }
 
@@ -166,6 +183,16 @@ export async function POST(request: NextRequest) {
         const oldConfig = adminConfig.EmailConfig;
         if (oldConfig?.resend?.apiKey) {
           emailConfig.resend.apiKey = oldConfig.resend.apiKey;
+        }
+      }
+
+      // 🌟 新增：处理 Mox 的 Token 占位符
+      if (emailConfig.mox?.apiToken === '******') {
+        const oldConfig = adminConfig.EmailConfig;
+        // @ts-ignore (如果类型文件还没更新 mox，先忽略这里的 TS 报错)
+        if (oldConfig?.mox?.apiToken) {
+          // @ts-ignore
+          emailConfig.mox.apiToken = oldConfig.mox.apiToken;
         }
       }
 
