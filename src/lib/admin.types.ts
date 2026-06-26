@@ -341,6 +341,11 @@ export interface AdminConfig {
       apiKey: string; // Resend API Key
       from: string; // 发件人邮箱
     };
+    mox?: {
+      apiUrl: string; // mox api key
+      from: string;
+      apiToken?: string;
+    }
   };
   MusicConfig?: {
     Enabled?: boolean; // 启用音乐功能
